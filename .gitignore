@@ -1,0 +1,17 @@
+# secrets and local configuration
+deploy/llm-config.local.json
+*.local.env
+.env
+
+# python
+__pycache__/
+*.pyc
+
+# data
+inputs/
+outputs/
+*.pdf
+
+# system
+Thumbs.db
+Desktop.ini

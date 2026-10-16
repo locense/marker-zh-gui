@@ -1,0 +1,123 @@
+name: marker
+services:
+  vllm:
+    image: vllm/vllm-openai:v0.20.1
+    container_name: marker-vllm
+    restart: unless-stopped
+    environment:
+      NVIDIA_VISIBLE_DEVICES: "0"
+      VLLM_USE_V1: "1"
+      HF_HUB_ENABLE_HF_TRANSFER: "1"
+    command:
+      - --model
+      - datalab-to/surya-ocr-2
+      - --served-model-name
+      - datalab-to/surya-ocr-2
+      - --dtype
+      - bfloat16
+      - --max-model-len
+      - "8192"
+      - --max-num-seqs
+      - "8"
+      - --max-num-batched-tokens
+      - "8192"
+      - --gpu-memory-utilization
+      - "0.72"
+      - --enable-prefix-caching
+      - --mm-processor-kwargs
+      - '{"min_pixels":3136,"max_pixels":6291456}'
+      - --speculative-config
+      - '{"method":"mtp","num_speculative_tokens":2}'
+      - --no-enforce-eager
+    ports:
+      - "127.0.0.1:18100:8000"
+    volumes:
+      - huggingface-cache:/root/.cache/huggingface
+    ipc: host
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["0"]
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 40
+      start_period: 20m
+
+  marker:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    image: local/marker-pdf:2.0.0
+    container_name: marker-client
+    entrypoint:
+      - marker_single
+    profiles: ["cli"]
+    depends_on:
+      vllm:
+        condition: service_healthy
+    environment:
+      SURYA_INFERENCE_BACKEND: vllm
+      SURYA_INFERENCE_URL: http://vllm:8000/v1
+      SURYA_INFERENCE_AUTOSTART: "false"
+      SURYA_INFERENCE_PARALLEL: "4"
+      SURYA_INFERENCE_KEEP_ALIVE: "true"
+      MODEL_CACHE_DIR: /root/.cache/datalab/models
+      DOCKER_HF_CACHE_PATH: /root/.cache/huggingface
+      TORCH_DEVICE: cpu
+    volumes:
+      - ../inputs:/inputs
+      - ../outputs:/outputs
+      - ./llm-config.json:/config/llm-config.json:ro
+      - marker-model-cache:/root/.cache/datalab/models
+      - huggingface-cache:/root/.cache/huggingface
+    stdin_open: true
+    tty: true
+
+  gui:
+    image: local/marker-pdf:2.0.0
+    container_name: marker-gui
+    entrypoint:
+      - marker_gui
+    profiles: ["gui"]
+    restart: unless-stopped
+    depends_on:
+      vllm:
+        condition: service_healthy
+    environment:
+      SURYA_INFERENCE_BACKEND: vllm
+      SURYA_INFERENCE_URL: http://vllm:8000/v1
+      SURYA_INFERENCE_AUTOSTART: "false"
+      SURYA_INFERENCE_PARALLEL: "4"
+      SURYA_INFERENCE_KEEP_ALIVE: "true"
+      MODEL_CACHE_DIR: /root/.cache/datalab/models
+      DOCKER_HF_CACHE_PATH: /root/.cache/huggingface
+      TORCH_DEVICE: cpu
+      STREAMLIT_SERVER_ADDRESS: 0.0.0.0
+      STREAMLIT_SERVER_PORT: "8501"
+      STREAMLIT_SERVER_HEADLESS: "true"
+      STREAMLIT_BROWSER_GATHER_USAGE_STATS: "false"
+      MARKER_LLM_SERVICE: marker.services.openai.OpenAIService
+      MARKER_LLM_CONFIG: /config/llm-config.json
+    ports:
+      - "127.0.0.1:18102:8501"
+    volumes:
+      - ../inputs:/inputs
+      - ../outputs:/outputs
+      - ./llm-config.json:/config/llm-config.json:ro
+      - marker-model-cache:/root/.cache/datalab/models
+      - huggingface-cache:/root/.cache/huggingface
+volumes:
+  huggingface-cache:
+  marker-model-cache:
+
+
+
+
+
+
+
