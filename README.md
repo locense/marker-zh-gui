@@ -155,6 +155,51 @@ MARKER_LLM_CONFIG: /config/llm-config.json
 
 不使用 LLM 时无需填写 Key，也不会产生 API 费用。
 
+## DeepSeek 结构化输出兼容（重要）
+
+Marker 默认通过 OpenAI 的 Pydantic 结构化输出（`response_format=<schema>`）调用模型，但 DeepSeek 当前只支持 `{"type": "json_object"}`，直接使用 `marker.services.openai.OpenAIService` 会返回：
+
+```text
+400 This response_format type is unavailable now
+```
+
+本仓库增加了 `patch/deepseek_service.py`，继承 `OpenAIService`，改为：
+
+1. 使用 `response_format={"type": "json_object"}`
+2. 将 JSON Schema 写入提示词
+3. 解析返回的 JSON 并记录 token 用量
+
+使用时把 `llm_service` 改为：
+
+```json
+"llm_service": "deepseek_service.DeepSeekService"
+```
+
+并确保容器设置了：
+
+```yaml
+PYTHONPATH: /custom_services
+```
+
+同时把 `patch/deepseek_service.py` 挂载到 `/custom_services/deepseek_service.py`。
+
+## 8 GB 显存下的上下文设置
+
+强制 OCR 时 Surya 会请求 `max_tokens=12288`，若 vLLM 的 `--max-model-len` 仍为 `8192`，会返回：
+
+```text
+max_tokens=12288 cannot be greater than max_model_len=8192
+```
+
+本仓库的 Compose 已改为：
+
+```yaml
+--max-model-len 16384
+--max-num-seqs 4
+```
+
+实测 8 GB RTX 4060 Laptop 可正常完成强制 OCR + DeepSeek 调用。
+
 ## 隐私说明
 
 本仓库不包含任何 API Key、账号、邮箱或本机绝对路径。`deploy/llm-config.json` 中的密钥为占位符，使用前请替换为你自己的 Key，并且不要把填好的文件提交到公开仓库。
@@ -162,3 +207,5 @@ MARKER_LLM_CONFIG: /config/llm-config.json
 ## 许可
 
 上游 Marker 采用 Apache-2.0 许可，本仓库为基于其前端脚本的修改版，同样以 Apache-2.0 发布，详见 [LICENSE](LICENSE)。
+
+

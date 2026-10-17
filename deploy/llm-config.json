@@ -1,5 +1,5 @@
 {
-  "llm_service": "marker.services.openai.OpenAIService",
+  "llm_service": "deepseek_service.DeepSeekService",
   "openai_base_url": "https://api.deepseek.com",
   "openai_model": "deepseek-flash",
   "openai_api_key": "sk-REPLACE_WITH_YOUR_API_KEY",
@@ -7,4 +7,5 @@
   "timeout": 120,
   "max_retries": 2
 }
+
 

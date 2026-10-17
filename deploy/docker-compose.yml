@@ -16,9 +16,9 @@ services:
       - --dtype
       - bfloat16
       - --max-model-len
-      - "8192"
+      - "16384"
       - --max-num-seqs
-      - "8"
+      - "4"
       - --max-num-batched-tokens
       - "8192"
       - --gpu-memory-utilization
@@ -69,10 +69,12 @@ services:
       MODEL_CACHE_DIR: /root/.cache/datalab/models
       DOCKER_HF_CACHE_PATH: /root/.cache/huggingface
       TORCH_DEVICE: cpu
+      PYTHONPATH: /custom_services
     volumes:
       - ../inputs:/inputs
       - ../outputs:/outputs
       - ./llm-config.json:/config/llm-config.json:ro
+      - ../custom_services:/custom_services:ro
       - marker-model-cache:/root/.cache/datalab/models
       - huggingface-cache:/root/.cache/huggingface
     stdin_open: true
@@ -97,11 +99,12 @@ services:
       MODEL_CACHE_DIR: /root/.cache/datalab/models
       DOCKER_HF_CACHE_PATH: /root/.cache/huggingface
       TORCH_DEVICE: cpu
+      PYTHONPATH: /custom_services
       STREAMLIT_SERVER_ADDRESS: 0.0.0.0
       STREAMLIT_SERVER_PORT: "8501"
       STREAMLIT_SERVER_HEADLESS: "true"
       STREAMLIT_BROWSER_GATHER_USAGE_STATS: "false"
-      MARKER_LLM_SERVICE: marker.services.openai.OpenAIService
+      MARKER_LLM_SERVICE: deepseek_service.DeepSeekService
       MARKER_LLM_CONFIG: /config/llm-config.json
     ports:
       - "127.0.0.1:18102:8501"
@@ -109,6 +112,7 @@ services:
       - ../inputs:/inputs
       - ../outputs:/outputs
       - ./llm-config.json:/config/llm-config.json:ro
+      - ../custom_services:/custom_services:ro
       - marker-model-cache:/root/.cache/datalab/models
       - huggingface-cache:/root/.cache/huggingface
 volumes:

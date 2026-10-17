@@ -5,3 +5,5 @@ Copyright (c) 2026 marker-zh-gui contributors
 修改内容包括：中文界面、多文件批量转换、结果下载与打包、LLM 服务环境变量注入。
 
 上游项目：https://github.com/datalab-to/marker
+
+

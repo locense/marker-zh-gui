@@ -20,3 +20,5 @@ COPY repo/marker/scripts/streamlit_app.py /usr/local/lib/python3.12/site-package
 
 WORKDIR /workspace
 CMD ["--help"]
+
+

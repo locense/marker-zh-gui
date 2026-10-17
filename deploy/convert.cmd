@@ -17,3 +17,5 @@ goto loop
 docker compose -f docker-compose.yml --profile cli run --rm marker "/inputs/%INPUT_NAME%" --output_dir /outputs %EXTRA_ARGS%
 endlocal
 
+
+
